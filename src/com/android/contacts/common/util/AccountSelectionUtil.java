@@ -23,6 +23,8 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
+import android.telephony.SubscriptionManager;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.ContextThemeWrapper;
 import android.view.LayoutInflater;
@@ -37,7 +39,9 @@ import com.android.contacts.common.model.AccountTypeManager;
 import com.android.contacts.common.model.account.AccountType;
 import com.android.contacts.common.model.account.AccountWithDataSet;
 import com.android.contacts.common.vcard.ImportVCardActivity;
+import com.android.contacts.common.SimContactsConstants;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -50,6 +54,8 @@ public class AccountSelectionUtil {
     public static boolean mVCardShare = false;
 
     public static Uri mPath;
+    // QRD enhancement: import subscription selected by user
+    private static int mImportSub = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
 
     public static class AccountSelectedListener
             implements DialogInterface.OnClickListener {
@@ -95,6 +101,9 @@ public class AccountSelectionUtil {
 
     public static Dialog getSelectAccountDialog(Activity activity, int resId) {
         return getSelectAccountDialog(activity, resId, null, null);
+
+    public static void setImportSubscription(int subscription) {
+        mImportSub = subscription;
     }
 
     public static Dialog getSelectAccountDialog(Activity activity, int resId,
@@ -190,24 +199,27 @@ public class AccountSelectionUtil {
 
    public static void doImport(Activity activity, int resId, AccountWithDataSet account,
             int subscriptionId) {
-        if (resId == R.string.import_from_sim) {
-            doImportFromSim(activity, account, subscriptionId);
-        } else if (resId == R.string.import_from_vcf_file) {
-            doImportFromVcfFile(activity, account);
+        switch (resId) {
+            case R.string.import_from_sim: {
+                doImportFromSim(activity, account, subscriptionId);
+                break;
+            }
+            case R.string.import_from_vcf_file: {
+                doImportFromVcfFile(activity, account);
+                break;
+            }
         }
     }
 
     public static void doImportFromSim(Context context, AccountWithDataSet account,
             int subscriptionId) {
-        Intent importIntent = new Intent(Intent.ACTION_VIEW);
-        importIntent.setType("vnd.android.cursor.item/sim-contact");
+        Intent importIntent = new Intent(SimContactsConstants.ACTION_MULTI_PICK_SIM);
         if (account != null) {
-            importIntent.putExtra("account_name", account.name);
-            importIntent.putExtra("account_type", account.type);
-            importIntent.putExtra("data_set", account.dataSet);
+            importIntent.putExtra(SimContactsConstants.ACCOUNT_NAME, account.name);
+            importIntent.putExtra(SimContactsConstants.ACCOUNT_TYPE, account.type);
+            importIntent.putExtra(SimContactsConstants.ACCOUNT_DATA, account.dataSet);
         }
-        importIntent.putExtra("subscription_id", (Integer) subscriptionId);
-        importIntent.setClassName("com.android.phone", "com.android.phone.SimContacts");
+            importIntent.putExtra(SimContactsConstants.SLOT_KEY, mImportSub);
         context.startActivity(importIntent);
     }
 
