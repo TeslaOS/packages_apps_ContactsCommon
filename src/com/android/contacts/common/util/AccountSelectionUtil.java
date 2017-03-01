@@ -101,6 +101,7 @@ public class AccountSelectionUtil {
 
     public static Dialog getSelectAccountDialog(Activity activity, int resId) {
         return getSelectAccountDialog(activity, resId, null, null);
+    }
 
     public static void setImportSubscription(int subscription) {
         mImportSub = subscription;
